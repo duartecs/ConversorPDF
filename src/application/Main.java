@@ -11,7 +11,7 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			primaryStage.setTitle("Conversor PDF");
-			// primaryStage.setResizable(false);
+			primaryStage.setResizable(false);
 
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Conversor.fxml"));
 			Parent arquivoXML = loader.load();

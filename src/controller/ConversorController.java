@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Optional;
 
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
@@ -24,7 +25,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
@@ -43,7 +46,10 @@ public class ConversorController {
 	private ListaArquivos listaArquivos = new ListaArquivos();
 
 	@FXML
-	private VBox boxImages;
+	private HBox menuBar;
+
+	@FXML
+	private HBox boxImages;
 
 	@FXML
 	private Button btnImage;
@@ -52,10 +58,31 @@ public class ConversorController {
 	private Button btnGerar;
 
 	@FXML
+	private Button btnTelaDireita;
+
+	@FXML
+	private Button btnTelaEsquerda;
+
+	@FXML
 	private AnchorPane pnlPrincipal;
 
 	@FXML
 	private ScrollPane scPanel;
+
+	@FXML
+	void onBtnTelaDireita(ActionEvent event) {
+		btnTelaDireita.hoverProperty().addListener(ev -> {
+			System.out.println("Hover  funfando");
+		});
+
+	}
+
+	@FXML
+	void onBtnTelaEsquerda(ActionEvent event) {
+		btnTelaEsquerda.hoverProperty().addListener(ev -> {
+			System.out.println("Hover  funfando");
+		});
+	}
 
 	@FXML
 	void onClickBtnCarregar(ActionEvent event) throws IOException {
@@ -184,24 +211,26 @@ public class ConversorController {
 
 	private VBox gerarCard(Arquivo arquivo) {
 		VBox card = new VBox();
-		card.setSpacing(5);
+		card.setSpacing(10);
 		card.setAlignment(Pos.CENTER);
+		card.setStyle("-fx-border-color: grey;" + "-fx-border-radius: 15px;" + "-fx-border-insets: 10 0 0 10;"
+				+ "-fx-padding: 10");
 
 		HBox botoes = new HBox();
 		botoes.setSpacing(25);
 		botoes.setAlignment(Pos.CENTER);
 
-		Button btnSubir = new Button("Subir");
-		btnSubir.setUserData(arquivo.getId().toString());
-		btnSubir.setOnAction(evento -> {
+		Button btnEsquerda = new Button("<--");
+		btnEsquerda.setUserData(arquivo.getId().toString());
+		btnEsquerda.setOnAction(evento -> {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
 			listaArquivos.trocarAnteriorById(id);
 			listarArquivos(listaArquivos);
 		});
 
-		Button btnDescer = new Button("Descer");
-		btnDescer.setUserData(arquivo.getId().toString());
-		btnDescer.setOnAction(evento -> {
+		Button btnDireita = new Button("-->");
+		btnDireita.setUserData(arquivo.getId().toString());
+		btnDireita.setOnAction(evento -> {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
 			listaArquivos.trocarProximoById(id);
 			listarArquivos(listaArquivos);
@@ -219,9 +248,10 @@ public class ConversorController {
 			}
 		});
 
-		botoes.getChildren().addAll(btnSubir, btnDescer, btnExcluir);
+		botoes.getChildren().addAll(btnEsquerda, btnExcluir, btnDireita);
 
 		Label label = new Label(arquivo.getNome());
+		label.setMaxWidth(250);
 
 		ImageView imagem = null;
 		if (arquivo.getTipoArquivo().equals(TipoArquivo.PDF)) {
@@ -237,8 +267,8 @@ public class ConversorController {
 
 		}
 
-		imagem.setFitHeight(300);
-		imagem.setFitWidth(300);
+		imagem.setFitHeight(400);
+		imagem.setFitWidth(250);
 		card.setId(arquivo.getId().toString());
 
 		card.getChildren().addAll(label, botoes, imagem);
@@ -262,25 +292,30 @@ public class ConversorController {
 		return card;
 	}
 
-//	public boolean onCloseQuery() {
-//		Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
-//		alerta.setTitle("Pergunta");
-//		alerta.setHeaderText("Deseja sair do sistema?");
-//
-//		ButtonType botaoNao = ButtonType.NO;
-//		ButtonType botaoSim = ButtonType.YES;
-//
-//		alerta.getButtonTypes().setAll(botaoSim, botaoNao);
-//
-//		Optional<ButtonType> opcaoClicada = alerta.showAndWait();
-//
-//		return opcaoClicada.get() == botaoSim ? true : false;
-//	}
-//
-//	@Override
-//	public void initialize(URL arg0, ResourceBundle arg1) {
-//		this.txtNumero1.requestFocus();
-//
-//	}
+	public boolean onCloseQuery() {
+		Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
+		alerta.setTitle("Pergunta");
+		alerta.setHeaderText("Deseja sair do sistema?");
+
+		ButtonType botaoNao = ButtonType.NO;
+		ButtonType botaoSim = ButtonType.YES;
+
+		alerta.getButtonTypes().setAll(botaoSim, botaoNao);
+
+		Optional<ButtonType> opcaoClicada = alerta.showAndWait();
+
+		return opcaoClicada.get() == botaoSim ? true : false;
+	}
+
+	@FXML
+	public void initialize() {
+		btnTelaEsquerda.hoverProperty().addListener(ev -> {
+			scPanel.setHvalue(scPanel.getHvalue() - 0.02);
+		});
+
+		btnTelaDireita.hoverProperty().addListener(ev -> {
+			scPanel.setHvalue(scPanel.getHvalue() + 0.02);
+		});
+	}
 
 }

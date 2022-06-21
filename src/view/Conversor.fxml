@@ -1,18 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 
-<AnchorPane fx:id="pnlPrincipal" prefHeight="722.0" prefWidth="514.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ConversorController">
+<AnchorPane fx:id="pnlPrincipal" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ConversorController">
    <children>
-      <Button fx:id="btnImage" layoutX="20.0" layoutY="14.0" mnemonicParsing="false" onAction="#onClickBtnCarregar" prefHeight="47.0" prefWidth="240.0" text="Selecionar arquivos" />
-      <Button fx:id="btnGerar" layoutX="293.0" layoutY="14.0" mnemonicParsing="false" onAction="#onClickBtnGerar" prefHeight="47.0" prefWidth="240.0" text="Gerar PDF" />
-      <ScrollPane fx:id="scPanel" layoutY="72.0" prefHeight="650.0" prefWidth="560.0">
-         <content>
-            <VBox fx:id="boxImages" alignment="CENTER" prefWidth="540.0" spacing="10.0" />
-         </content>
-      </ScrollPane>
+      <HBox fx:id="menuBar" alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="70.0" prefWidth="1000.0" spacing="25.0">
+         <children>
+            <Button fx:id="btnImage" mnemonicParsing="false" onAction="#onClickBtnCarregar" prefHeight="47.0" prefWidth="240.0" text="Selecionar arquivos" />
+            <Button fx:id="btnGerar" mnemonicParsing="false" onAction="#onClickBtnGerar" prefHeight="47.0" prefWidth="240.0" text="Gerar PDF" />
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+      </HBox>
+      <HBox alignment="CENTER" layoutY="75.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="530.0" prefWidth="1000.0">
+         <children>
+            <Button fx:id="btnTelaEsquerda" mnemonicParsing="false" onAction="#onBtnTelaEsquerda" prefHeight="551.0" prefWidth="29.0" text="&lt;" />
+            <ScrollPane fx:id="scPanel" minHeight="-Infinity" minWidth="-Infinity" prefHeight="530.0" prefWidth="942.0" HBox.hgrow="NEVER">
+               <content>
+                  <HBox fx:id="boxImages" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="510.0" />
+               </content>
+            </ScrollPane>
+            <Button fx:id="btnTelaDireita" mnemonicParsing="false" onAction="#onBtnTelaDireita" prefHeight="532.0" prefWidth="29.0" text="&gt;" />
+         </children>
+      </HBox>
    </children>
 </AnchorPane>
