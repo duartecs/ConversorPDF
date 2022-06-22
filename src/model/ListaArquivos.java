@@ -6,26 +6,35 @@ public class ListaArquivos {
 
 	private Arquivo primeiro;
 	private Integer contador;
+	private Integer sequencial;
 
 	public ListaArquivos() {
 		this.primeiro = null;
 		this.contador = 0;
+		this.sequencial = 0;
 	}
 
 	public Integer getContador() {
 		return contador;
 	}
 
+	public Integer getSequencial() {
+		return sequencial;
+	}
+
 	public void adicionar(Arquivo arquivo) {
 		if (listaVazia()) {
 			this.primeiro = arquivo;
 			contador++;
+			sequencial++;
 			return;
 		}
+
 		Arquivo ultimoArquivo = getUltimoElemento();
 		ultimoArquivo.setArquivoProximo(arquivo);
 		arquivo.setArquivoAnterior(ultimoArquivo);
 		contador++;
+		sequencial++;
 	}
 
 	private Arquivo getUltimoElemento() {
@@ -35,15 +44,17 @@ public class ListaArquivos {
 		if (this.primeiro.getArquivoProximo() == null) {
 			return this.primeiro;
 		}
-		return getUltimoElemento(this.primeiro.getArquivoProximo());
 
-	}
+		Arquivo arquivo = this.primeiro.getArquivoProximo();
 
-	private Arquivo getUltimoElemento(Arquivo arquivo) {
-		if (arquivo.getArquivoProximo() == null) {
-			return arquivo;
+		while (arquivo != null) {
+			if (arquivo.getArquivoProximo() == null) {
+				return arquivo;
+			}
+			arquivo = arquivo.getArquivoProximo();
 		}
-		return getUltimoElemento(arquivo.getArquivoProximo());
+		return null;
+
 	}
 
 	public Boolean listaVazia() {
@@ -54,20 +65,21 @@ public class ListaArquivos {
 		if (listaVazia()) {
 			return null;
 		}
+
 		if (this.primeiro.getId().equals(id)) {
 			return this.primeiro;
 		}
 
 		Arquivo arquivo = this.primeiro.getArquivoProximo();
 
-		while (!arquivo.getId().equals(id)) {
-			if (arquivo.getArquivoProximo() == null) {
-				return null;
+		while (arquivo != null) {
+			if (arquivo.getId().equals(id)) {
+				return arquivo;
 			}
 			arquivo = arquivo.getArquivoProximo();
 		}
 
-		return arquivo;
+		return null;
 	}
 
 	public Arquivo removerById(Integer id) {

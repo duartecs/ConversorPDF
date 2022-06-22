@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
@@ -25,9 +25,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
@@ -70,18 +68,23 @@ public class ConversorController {
 	private ScrollPane scPanel;
 
 	@FXML
-	void onBtnTelaDireita(ActionEvent event) {
-		btnTelaDireita.hoverProperty().addListener(ev -> {
-			System.out.println("Hover  funfando");
+	public void initialize() {
+		scPanel.setOnScroll(event -> {
+			if (event.getDeltaX() == 0 && event.getDeltaY() != 0) {
+				scPanel.setHvalue(scPanel.getHvalue() - event.getDeltaY() / boxImages.getWidth());
+			}
 		});
 
 	}
 
 	@FXML
+	void onBtnTelaDireita(ActionEvent event) {
+		scPanel.setHvalue(scPanel.getHvalue() + getValor() * 3);
+	}
+
+	@FXML
 	void onBtnTelaEsquerda(ActionEvent event) {
-		btnTelaEsquerda.hoverProperty().addListener(ev -> {
-			System.out.println("Hover  funfando");
-		});
+		scPanel.setHvalue(scPanel.getHvalue() - getValor() * 3);
 	}
 
 	@FXML
@@ -93,39 +96,18 @@ public class ConversorController {
 		fileChooser.getExtensionFilters().add(
 				new ExtensionFilter("Pdf, Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.pdf", "*.PDF", "*.Pdf"));
 
-		// Quando abre a localizador de arquivos esconde a tela do programa
-		// Stage stage = (Stage) pnlPrincipal.getScene().getWindow();
-
-		List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
+		List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null).stream()
+				.sorted((a, b) -> a.getName().compareTo(b.getName())).collect(Collectors.toList());
 
 		if (selectedFiles != null) {
 
-			int count = 1;
 			for (File file : selectedFiles) {
-
 				Arquivo arquivo = new Arquivo(getTipo(file.getAbsolutePath()), file.getAbsolutePath(), file.getName(),
-						count);
+						listaArquivos.getSequencial());
 				listaArquivos.adicionar(arquivo);
-
-				count++;
 			}
 			listarArquivos(listaArquivos);
-
 		}
-
-	}
-
-	private void listarArquivos(ListaArquivos listaArquivos) {
-		limparTela();
-		Arquivo arquivo = listaArquivos.getPrimeiro();
-		while (arquivo != null) {
-			boxImages.getChildren().add(gerarCard(arquivo));
-			arquivo = listaArquivos.getProximo(arquivo);
-		}
-	}
-
-	private void limparTela() {
-		boxImages.getChildren().removeAll(boxImages.getChildren());
 	}
 
 	@FXML
@@ -143,6 +125,19 @@ public class ConversorController {
 
 	}
 
+	private void listarArquivos(ListaArquivos listaArquivos) {
+		limparTela();
+		Arquivo arquivo = listaArquivos.getPrimeiro();
+		while (arquivo != null) {
+			boxImages.getChildren().add(gerarCard(arquivo));
+			arquivo = listaArquivos.getProximo(arquivo);
+		}
+	}
+
+	private void limparTela() {
+		boxImages.getChildren().removeAll(boxImages.getChildren());
+	}
+
 	public void carregarTelaSucesso(String pathSave) {
 		this.listaArquivos = new ListaArquivos();
 		limparTela();
@@ -154,7 +149,9 @@ public class ConversorController {
 		try {
 			PdfDocument pdf = new PdfDocument(new PdfWriter(pathSave));
 			Document document = new Document(pdf, PageSize.A4);
-			document.setMargins(20f, 20f, 20f, 20f);
+
+			float documentWidth = PageSize.A4.getWidth() - 50.00f;
+			float documentHeight = PageSize.A4.getHeight() - 50.00f;
 
 			Arquivo arquivo = listaArquivos.getPrimeiro();
 			while (arquivo != null) {
@@ -167,6 +164,7 @@ public class ConversorController {
 					ImageData data = ImageDataFactory.create(arquivo.getPathArquivo());
 					com.itextpdf.layout.element.Image imagePdf = new com.itextpdf.layout.element.Image(data);
 					imagePdf.setHorizontalAlignment(HorizontalAlignment.CENTER);
+					imagePdf.scaleToFit(documentWidth, documentHeight);
 					document.add(imagePdf);
 				} else {
 					PdfDocument pdf2 = new PdfDocument(new PdfReader(arquivo.getPathArquivo()));
@@ -226,6 +224,7 @@ public class ConversorController {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
 			listaArquivos.trocarAnteriorById(id);
 			listarArquivos(listaArquivos);
+			scPanel.setHvalue(scPanel.getHvalue() - getValor());
 		});
 
 		Button btnDireita = new Button("-->");
@@ -234,6 +233,7 @@ public class ConversorController {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
 			listaArquivos.trocarProximoById(id);
 			listarArquivos(listaArquivos);
+			scPanel.setHvalue(scPanel.getHvalue() + getValor());
 		});
 
 		Button btnExcluir = new Button("Excluir");
@@ -280,6 +280,7 @@ public class ConversorController {
 		VBox card = new VBox();
 		card.setSpacing(15);
 		card.setAlignment(Pos.CENTER);
+		card.setMinWidth(900.00);
 
 		Label label = new Label("Arquivo gerado em: " + pathArquivo);
 
@@ -292,30 +293,9 @@ public class ConversorController {
 		return card;
 	}
 
-	public boolean onCloseQuery() {
-		Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
-		alerta.setTitle("Pergunta");
-		alerta.setHeaderText("Deseja sair do sistema?");
-
-		ButtonType botaoNao = ButtonType.NO;
-		ButtonType botaoSim = ButtonType.YES;
-
-		alerta.getButtonTypes().setAll(botaoSim, botaoNao);
-
-		Optional<ButtonType> opcaoClicada = alerta.showAndWait();
-
-		return opcaoClicada.get() == botaoSim ? true : false;
-	}
-
-	@FXML
-	public void initialize() {
-		btnTelaEsquerda.hoverProperty().addListener(ev -> {
-			scPanel.setHvalue(scPanel.getHvalue() - 0.02);
-		});
-
-		btnTelaDireita.hoverProperty().addListener(ev -> {
-			scPanel.setHvalue(scPanel.getHvalue() + 0.02);
-		});
+	private Double getValor() {
+		double result = 1.0 / listaArquivos.getContador();
+		return result;
 	}
 
 }
