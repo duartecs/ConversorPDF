@@ -20,7 +20,7 @@
       <HBox alignment="CENTER" layoutY="75.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="530.0" prefWidth="1000.0">
          <children>
             <Button fx:id="btnTelaEsquerda" mnemonicParsing="false" onAction="#onBtnTelaEsquerda" prefHeight="551.0" prefWidth="29.0" text="&lt;" />
-            <ScrollPane fx:id="scPanel" minHeight="-Infinity" minWidth="-Infinity" prefHeight="530.0" prefWidth="942.0" HBox.hgrow="NEVER">
+            <ScrollPane fx:id="scPanel" minHeight="-Infinity" minWidth="-Infinity" onDragDropped="#handleDragDrop" onDragOver="#handleDragOver" prefHeight="530.0" prefWidth="942.0" HBox.hgrow="NEVER">
                <content>
                   <HBox fx:id="boxImages" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" prefHeight="510.0" />
                </content>

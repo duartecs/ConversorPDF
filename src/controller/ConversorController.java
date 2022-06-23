@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,11 +26,15 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -42,6 +47,8 @@ import model.TipoArquivo;
 public class ConversorController {
 
 	private ListaArquivos listaArquivos = new ListaArquivos();
+
+	private List<File> arquivosInvalidos = new ArrayList<File>();
 
 	@FXML
 	private HBox menuBar;
@@ -74,7 +81,22 @@ public class ConversorController {
 				scPanel.setHvalue(scPanel.getHvalue() - event.getDeltaY() / boxImages.getWidth());
 			}
 		});
+	}
 
+	@FXML
+	void handleDragOver(DragEvent event) {
+		if (event.getDragboard().hasFiles()) {
+			event.acceptTransferModes(TransferMode.ANY);
+		}
+	}
+
+	@FXML
+	void handleDragDrop(DragEvent event) {
+		List<File> files = event.getDragboard().getFiles();
+
+		adicionarLista(files);
+
+		listarArquivos();
 	}
 
 	@FXML
@@ -96,42 +118,78 @@ public class ConversorController {
 		fileChooser.getExtensionFilters().add(
 				new ExtensionFilter("Pdf, Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.pdf", "*.PDF", "*.Pdf"));
 
-		List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null).stream()
-				.sorted((a, b) -> a.getName().compareTo(b.getName())).collect(Collectors.toList());
+		List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
 
 		if (selectedFiles != null) {
 
-			for (File file : selectedFiles) {
-				Arquivo arquivo = new Arquivo(getTipo(file.getAbsolutePath()), file.getAbsolutePath(), file.getName(),
-						listaArquivos.getSequencial());
-				listaArquivos.adicionar(arquivo);
-			}
-			listarArquivos(listaArquivos);
+			adicionarLista(selectedFiles);
+
+			listarArquivos();
 		}
 	}
 
 	@FXML
 	void onClickBtnGerar(ActionEvent event) {
+
 		if (!listaArquivos.listaVazia()) {
+
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Salvar");
 			fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
 			fileChooser.getExtensionFilters().add(new ExtensionFilter("PDF", "*.pdf"));
 			fileChooser.setInitialFileName("Arquivo");
+
 			File pathSave = fileChooser.showSaveDialog(null);
+
 			gerarPDF(pathSave.getAbsolutePath() + ".pdf");
+
 			carregarTelaSucesso(pathSave.getAbsolutePath());
 		}
-
 	}
 
-	private void listarArquivos(ListaArquivos listaArquivos) {
-		limparTela();
-		Arquivo arquivo = listaArquivos.getPrimeiro();
-		while (arquivo != null) {
-			boxImages.getChildren().add(gerarCard(arquivo));
-			arquivo = listaArquivos.getProximo(arquivo);
+	private void adicionarLista(List<File> arquivosSelecionados) {
+		List<File> arquivosOrdenados = arquivosSelecionados.stream()
+				.sorted((a, b) -> a.getName().compareTo(b.getName())).collect(Collectors.toList());
+
+		for (File file : arquivosOrdenados) {
+
+			Arquivo arquivo = new Arquivo(getTipo(file.getAbsolutePath()), file.getAbsolutePath(), file.getName(),
+					listaArquivos.getSequencial());
+
+			if (arquivo.getTipoArquivo() == null) {
+				arquivosInvalidos.add(file);
+			} else {
+				listaArquivos.adicionar(arquivo);
+			}
 		}
+	}
+
+	private void listarArquivos() {
+
+		limparTela();
+
+		Arquivo arquivo = this.listaArquivos.getPrimeiro();
+
+		while (arquivo != null) {
+
+			boxImages.getChildren().add(gerarCard(arquivo));
+
+			arquivo = this.listaArquivos.getProximo(arquivo);
+		}
+
+		if (!this.arquivosInvalidos.isEmpty()) {
+			StringBuilder sb = new StringBuilder();
+
+			for (File file : this.arquivosInvalidos) {
+				sb.append(file.getName());
+				sb.append("\n");
+			}
+			String erros = sb.toString();
+			carregarAlerta("Atenção!", "Estes arquivos não foram adicionados por não serem do tipo imagem ou pdf: ",
+					erros);
+			this.arquivosInvalidos.clear();
+		}
+
 	}
 
 	private void limparTela() {
@@ -139,9 +197,20 @@ public class ConversorController {
 	}
 
 	public void carregarTelaSucesso(String pathSave) {
+
 		this.listaArquivos = new ListaArquivos();
+
 		limparTela();
+
 		boxImages.getChildren().add(gerarSucesso(pathSave));
+	}
+
+	private void carregarAlerta(String titulo, String mensagem, String descricao) {
+		Alert alert = new Alert(AlertType.INFORMATION);
+		alert.setTitle(titulo);
+		alert.setHeaderText(mensagem);
+		alert.setContentText(descricao);
+		alert.showAndWait();
 	}
 
 	public void gerarPDF(String pathSave) {
@@ -181,13 +250,13 @@ public class ConversorController {
 			document.close();
 
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
+			carregarAlerta("Erro", "Problemas ao gerar o arquivo PDF: Arquivo não encontrado", e.getMessage());
 			e.printStackTrace();
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
+			carregarAlerta("Erro", "Problemas ao gerar o arquivo PDF: URL não encontrada", e.getMessage());
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			carregarAlerta("Erro", "Problemas ao gerar o arquivo PDF: IOException", e.getMessage());
 			e.printStackTrace();
 		}
 
@@ -202,8 +271,6 @@ public class ConversorController {
 		if (extensao.equals("jpg") || extensao.equals("jpeg") || extensao.equals("png") || extensao.equals("gif")) {
 			return TipoArquivo.IMAGEM;
 		}
-
-		System.out.println("Extensao invalida");
 		return null;
 	}
 
@@ -215,29 +282,51 @@ public class ConversorController {
 				+ "-fx-padding: 10");
 
 		HBox botoes = new HBox();
-		botoes.setSpacing(25);
+		botoes.setSpacing(15);
 		botoes.setAlignment(Pos.CENTER);
+		botoes.setMaxWidth(250);
 
 		Button btnEsquerda = new Button("<--");
+		btnEsquerda.setStyle(getBtnStyle("PADRAO"));
 		btnEsquerda.setUserData(arquivo.getId().toString());
+		btnEsquerda.setOnMouseEntered(e -> {
+			btnEsquerda.setStyle(getBtnStyle("PADRAO:HOVER"));
+		});
+		btnEsquerda.setOnMouseExited(e -> {
+			btnEsquerda.setStyle(getBtnStyle("PADRAO"));
+		});
 		btnEsquerda.setOnAction(evento -> {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
 			listaArquivos.trocarAnteriorById(id);
-			listarArquivos(listaArquivos);
+			listarArquivos();
 			scPanel.setHvalue(scPanel.getHvalue() - getValor());
 		});
 
 		Button btnDireita = new Button("-->");
+		btnDireita.setStyle(getBtnStyle("PADRAO"));
 		btnDireita.setUserData(arquivo.getId().toString());
+		btnDireita.setOnMouseEntered(e -> {
+			btnDireita.setStyle(getBtnStyle("PADRAO:HOVER"));
+		});
+		btnDireita.setOnMouseExited(e -> {
+			btnDireita.setStyle(getBtnStyle("PADRAO"));
+		});
 		btnDireita.setOnAction(evento -> {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
 			listaArquivos.trocarProximoById(id);
-			listarArquivos(listaArquivos);
+			listarArquivos();
 			scPanel.setHvalue(scPanel.getHvalue() + getValor());
 		});
 
 		Button btnExcluir = new Button("Excluir");
+		btnExcluir.setStyle(getBtnStyle("EXCLUIR"));
 		btnExcluir.setUserData(arquivo.getId().toString());
+		btnExcluir.setOnMouseEntered(e -> {
+			btnExcluir.setStyle(getBtnStyle("EXCLUIR:HOVER"));
+		});
+		btnExcluir.setOnMouseExited(e -> {
+			btnExcluir.setStyle(getBtnStyle("EXCLUIR"));
+		});
 		btnExcluir.setOnAction(evento -> {
 			for (Node node : boxImages.getChildren()) {
 				if (node.getId().equals(((Node) evento.getSource()).getUserData())) {
@@ -251,6 +340,7 @@ public class ConversorController {
 		botoes.getChildren().addAll(btnEsquerda, btnExcluir, btnDireita);
 
 		Label label = new Label(arquivo.getNome());
+		label.setAlignment(Pos.CENTER);
 		label.setMaxWidth(250);
 
 		ImageView imagem = null;
@@ -269,22 +359,23 @@ public class ConversorController {
 
 		imagem.setFitHeight(400);
 		imagem.setFitWidth(250);
-		card.setId(arquivo.getId().toString());
 
+		card.setId(arquivo.getId().toString());
 		card.getChildren().addAll(label, botoes, imagem);
 
 		return card;
 	}
 
-	public VBox gerarSucesso(String pathArquivo) {
+	private VBox gerarSucesso(String pathArquivo) {
 		VBox card = new VBox();
 		card.setSpacing(15);
 		card.setAlignment(Pos.CENTER);
-		card.setMinWidth(900.00);
+		card.setMinWidth(950.00);
 
 		Label label = new Label("Arquivo gerado em: " + pathArquivo);
 
 		ImageView imagem = new ImageView(new Image(getClass().getResourceAsStream("/resources/check.png")));
+
 		imagem.setFitHeight(300);
 		imagem.setFitWidth(300);
 
@@ -296,6 +387,53 @@ public class ConversorController {
 	private Double getValor() {
 		double result = 1.0 / listaArquivos.getContador();
 		return result;
+	}
+
+	private String getBtnStyle(String tipo) {
+
+		String corPrimaria = null;
+		String corSecundaria = null;
+		boolean toogle = true;
+
+		switch (tipo) {
+		case "PADRAO":
+			corPrimaria = "#1e55fa";
+			break;
+
+		case "PADRAO:HOVER":
+			corPrimaria = "#1e55fa";
+			corSecundaria = "#0b02ba";
+			toogle = false;
+			break;
+
+		case "EXCLUIR":
+			corPrimaria = "#bd005e";
+			break;
+
+		case "EXCLUIR:HOVER":
+			corPrimaria = "#bd005e";
+			corSecundaria = "#6e0202";
+			toogle = false;
+			break;
+
+		default:
+			break;
+		}
+
+		String padrao = "-fx-padding: 10 20 10 20;" + "-fx-background-color: " + "transparent," + "-fx-inner-border;"
+				+ "-fx-border-color: " + corPrimaria + ";" + "-fx-border-radius: 6, 5;"
+				+ "    -fx-background-radius: 6, 5;" + "    -fx-background-insets: 0, 1;"
+				+ "    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.4) , 5, 0.0 , 0 , 1 );"
+				+ "    -fx-text-fill: " + corPrimaria + ";";
+
+		String padraoHover = "-fx-padding: 10 20 10 20;" + "-fx-background-color:" + "        linear-gradient("
+				+ corPrimaria + ", " + corSecundaria + ")," + "        radial-gradient(center 50% -40%, radius 200%, "
+				+ corPrimaria + " 45%, " + corSecundaria + " 50%);" + "    -fx-background-radius: 6, 5;"
+				+ "    -fx-background-insets: 0, 1;"
+				+ "    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.4) , 5, 0.0 , 0 , 1 );"
+				+ "    -fx-text-fill: #FFFFFF;";
+
+		return toogle ? padrao : padraoHover;
 	}
 
 }

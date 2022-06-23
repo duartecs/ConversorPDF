@@ -85,10 +85,33 @@ public class ListaArquivos {
 	public Arquivo removerById(Integer id) {
 		Arquivo vitima = getById(id);
 
-		vitima.getArquivoAnterior().setArquivoProximo(vitima.getArquivoProximo());
-		vitima.getArquivoProximo().setArquivoAnterior(vitima.getArquivoAnterior());
+		if (vitima.getArquivoAnterior() == null || vitima.getArquivoProximo() == null) {
+			if (vitima.getArquivoAnterior() == null && vitima.getArquivoProximo() == null) {
+				this.primeiro = null;
+				contador--;
+				return null;
+			}
+			if (vitima.getArquivoAnterior() == null) {
+				this.primeiro = vitima.getArquivoProximo();
+				this.primeiro.setArquivoAnterior(null);
+				contador--;
+				return this.primeiro;
+			}
+			vitima.getArquivoAnterior().setArquivoProximo(null);
+			vitima.setArquivoAnterior(null);
+			contador--;
+			return vitima;
+		}
+
+		Arquivo arquivoProximo = vitima.getArquivoProximo();
+		Arquivo arquivoAnterior = vitima.getArquivoAnterior();
+
+		arquivoAnterior.setArquivoProximo(arquivoProximo);
+		arquivoProximo.setArquivoAnterior(arquivoAnterior);
+
 		vitima.setArquivoAnterior(null);
 		vitima.setArquivoProximo(null);
+
 		contador--;
 
 		return vitima;
