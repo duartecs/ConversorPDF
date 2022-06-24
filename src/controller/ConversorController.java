@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,6 +51,8 @@ public class ConversorController {
 
 	private List<File> arquivosInvalidos = new ArrayList<File>();
 
+	private Instant instant;
+
 	@FXML
 	private HBox menuBar;
 
@@ -63,12 +66,6 @@ public class ConversorController {
 	private Button btnGerar;
 
 	@FXML
-	private Button btnTelaDireita;
-
-	@FXML
-	private Button btnTelaEsquerda;
-
-	@FXML
 	private AnchorPane pnlPrincipal;
 
 	@FXML
@@ -76,9 +73,19 @@ public class ConversorController {
 
 	@FXML
 	public void initialize() {
+
+		this.instant = Instant.now();
+
 		scPanel.setOnScroll(event -> {
 			if (event.getDeltaX() == 0 && event.getDeltaY() != 0) {
 				scPanel.setHvalue(scPanel.getHvalue() - event.getDeltaY() / boxImages.getWidth());
+			}
+		});
+
+		pnlPrincipal.heightProperty().addListener(event -> {
+			if (Instant.now().isAfter(this.instant.plusMillis(500))) {
+				this.instant = Instant.now();
+				listarArquivos();
 			}
 		});
 	}
@@ -97,16 +104,6 @@ public class ConversorController {
 		adicionarLista(files);
 
 		listarArquivos();
-	}
-
-	@FXML
-	void onBtnTelaDireita(ActionEvent event) {
-		scPanel.setHvalue(scPanel.getHvalue() + getValor() * 3);
-	}
-
-	@FXML
-	void onBtnTelaEsquerda(ActionEvent event) {
-		scPanel.setHvalue(scPanel.getHvalue() - getValor() * 3);
 	}
 
 	@FXML
@@ -263,18 +260,23 @@ public class ConversorController {
 	}
 
 	private TipoArquivo getTipo(String path) {
-		String extensao = path.substring(path.lastIndexOf(".") + 1);
+		String extensao = path.substring(path.lastIndexOf(".") + 1).toLowerCase();
 
 		if (extensao.equals("pdf")) {
 			return TipoArquivo.PDF;
 		}
-		if (extensao.equals("jpg") || extensao.equals("jpeg") || extensao.equals("png") || extensao.equals("gif")) {
+		if (extensao.equals("jpg") || extensao.equals("jpeg") || extensao.equals("png") || extensao.equals("gif")
+				|| extensao.equals("bmp")) {
 			return TipoArquivo.IMAGEM;
 		}
 		return null;
 	}
 
 	private VBox gerarCard(Arquivo arquivo) {
+
+		double width = pnlPrincipal.getWidth() / 5;
+		double heigth = pnlPrincipal.getHeight() / 1.5;
+
 		VBox card = new VBox();
 		card.setSpacing(10);
 		card.setAlignment(Pos.CENTER);
@@ -284,7 +286,7 @@ public class ConversorController {
 		HBox botoes = new HBox();
 		botoes.setSpacing(15);
 		botoes.setAlignment(Pos.CENTER);
-		botoes.setMaxWidth(250);
+		botoes.setMaxWidth(width);
 
 		Button btnEsquerda = new Button("<--");
 		btnEsquerda.setStyle(getBtnStyle("PADRAO"));
@@ -341,7 +343,7 @@ public class ConversorController {
 
 		Label label = new Label(arquivo.getNome());
 		label.setAlignment(Pos.CENTER);
-		label.setMaxWidth(250);
+		label.setMaxWidth(width);
 
 		ImageView imagem = null;
 		if (arquivo.getTipoArquivo().equals(TipoArquivo.PDF)) {
@@ -351,14 +353,14 @@ public class ConversorController {
 				InputStream streamImage = new FileInputStream(arquivo.getPathArquivo());
 				imagem = new ImageView(new Image(streamImage));
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
+				carregarAlerta("Erro", "Problemas ao encontrar a imagem padrão do arquivo PDF", e.getMessage());
 				e.printStackTrace();
 			}
 
 		}
 
-		imagem.setFitHeight(400);
-		imagem.setFitWidth(250);
+		imagem.setFitHeight(heigth);
+		imagem.setFitWidth(width);
 
 		card.setId(arquivo.getId().toString());
 		card.getChildren().addAll(label, botoes, imagem);
@@ -420,13 +422,13 @@ public class ConversorController {
 			break;
 		}
 
-		String padrao = "-fx-padding: 10 20 10 20;" + "-fx-background-color: " + "transparent," + "-fx-inner-border;"
+		String padrao = "-fx-padding: 10 10 10 10;" + "-fx-background-color: " + "transparent," + "-fx-inner-border;"
 				+ "-fx-border-color: " + corPrimaria + ";" + "-fx-border-radius: 6, 5;"
 				+ "    -fx-background-radius: 6, 5;" + "    -fx-background-insets: 0, 1;"
 				+ "    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.4) , 5, 0.0 , 0 , 1 );"
 				+ "    -fx-text-fill: " + corPrimaria + ";";
 
-		String padraoHover = "-fx-padding: 10 20 10 20;" + "-fx-background-color:" + "        linear-gradient("
+		String padraoHover = "-fx-padding: 10 10 10 10;" + "-fx-background-color:" + "        linear-gradient("
 				+ corPrimaria + ", " + corSecundaria + ")," + "        radial-gradient(center 50% -40%, radius 200%, "
 				+ corPrimaria + " 45%, " + corSecundaria + " 50%);" + "    -fx-background-radius: 6, 5;"
 				+ "    -fx-background-insets: 0, 1;"
