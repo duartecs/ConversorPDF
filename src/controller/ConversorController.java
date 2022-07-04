@@ -19,6 +19,7 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.WriterProperties;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.properties.AreaBreakType;
@@ -219,7 +220,7 @@ public class ConversorController {
 	public void gerarPDF(String pathSave) {
 
 		try {
-			PdfDocument pdf = new PdfDocument(new PdfWriter(pathSave));
+			PdfDocument pdf = new PdfDocument(new PdfWriter(pathSave, new WriterProperties().setFullCompressionMode(true)));
 			Document document = new Document(pdf, PageSize.A4);
 
 			float documentWidth = PageSize.A4.getWidth() - 50.00f;
