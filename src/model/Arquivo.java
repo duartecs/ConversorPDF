@@ -8,8 +8,6 @@ public class Arquivo {
 	private String pathArquivo;
 	private String nome;
 	private Integer id;
-	private Arquivo arquivoAnterior;
-	private Arquivo arquivoProximo;
 
 	public Arquivo(TipoArquivo tipoArquivo, String pathArquivo, String nome, Integer id) {
 		this.tipoArquivo = tipoArquivo;
@@ -49,46 +47,7 @@ public class Arquivo {
 	public void setId(Integer id) {
 		this.id = id;
 	}
-
-	protected Arquivo getArquivoAnterior() {
-		return arquivoAnterior;
-	}
-
-	protected void setArquivoAnterior(Arquivo arquivoAnterior) {
-		this.arquivoAnterior = arquivoAnterior;
-	}
-
-	protected Arquivo getArquivoProximo() {
-		return arquivoProximo;
-	}
-
-	protected void setArquivoProximo(Arquivo arquivoProximo) {
-		this.arquivoProximo = arquivoProximo;
-	}
-
-	@Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("{");
-
-		if (getArquivoAnterior() == null) {
-			sb.append("Anterior = []");
-		} else {
-			sb.append("Anterior id = " + getArquivoAnterior().getId());
-		}
-
-		sb.append(" | Atual id = " + getId());
-
-		if (getArquivoProximo() == null) {
-			sb.append(" | Proximo = []");
-		} else {
-			sb.append(" | Proximo id = " + getArquivoProximo().getId());
-		}
-
-		sb.append("}");
-		return sb.toString();
-	}
-
+	
 	@Override
 	public int hashCode() {
 		return Objects.hash(id);

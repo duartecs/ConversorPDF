@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,7 @@ import com.itextpdf.layout.properties.HorizontalAlignment;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -42,16 +44,19 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import model.Arquivo;
-import model.ListaArquivos;
 import model.TipoArquivo;
 
 public class ConversorController {
 
-	private ListaArquivos listaArquivos = new ListaArquivos();
+	private List<Arquivo> listaArquivos = new LinkedList<>();
 
-	private List<File> arquivosInvalidos = new ArrayList<File>();
+	private List<File> arquivosInvalidos = new ArrayList<>();
 
 	private Instant instant;
+
+	private Integer sequencial = 0;
+
+	private final String formatArchive = ".pdf";
 
 	@FXML
 	private HBox menuBar;
@@ -128,7 +133,7 @@ public class ConversorController {
 	@FXML
 	void onClickBtnGerar(ActionEvent event) {
 
-		if (!listaArquivos.listaVazia()) {
+		if (!listaArquivos.isEmpty()) {
 
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Salvar");
@@ -138,7 +143,11 @@ public class ConversorController {
 
 			File pathSave = fileChooser.showSaveDialog(null);
 
-			gerarPDF(pathSave.getAbsolutePath() + ".pdf");
+			String pathSaveFormated = pathSave.getAbsolutePath().toLowerCase().contains(formatArchive)
+					? pathSave.getAbsolutePath()
+					: pathSave.getAbsolutePath() + formatArchive;
+
+			gerarPDF(pathSaveFormated);
 
 			carregarTelaSucesso(pathSave.getAbsolutePath());
 		}
@@ -151,13 +160,14 @@ public class ConversorController {
 		for (File file : arquivosOrdenados) {
 
 			Arquivo arquivo = new Arquivo(getTipo(file.getAbsolutePath()), file.getAbsolutePath(), file.getName(),
-					listaArquivos.getSequencial());
+					sequencial++);
 
 			if (arquivo.getTipoArquivo() == null) {
 				arquivosInvalidos.add(file);
 			} else {
-				listaArquivos.adicionar(arquivo);
+				listaArquivos.add(arquivo);
 			}
+
 		}
 	}
 
@@ -165,13 +175,8 @@ public class ConversorController {
 
 		limparTela();
 
-		Arquivo arquivo = this.listaArquivos.getPrimeiro();
-
-		while (arquivo != null) {
-
+		for (Arquivo arquivo : listaArquivos) {
 			boxImages.getChildren().add(gerarCard(arquivo));
-
-			arquivo = this.listaArquivos.getProximo(arquivo);
 		}
 
 		if (!this.arquivosInvalidos.isEmpty()) {
@@ -195,7 +200,8 @@ public class ConversorController {
 
 	public void carregarTelaSucesso(String pathSave) {
 
-		this.listaArquivos = new ListaArquivos();
+		this.listaArquivos.clear();
+		this.sequencial = 0;
 
 		limparTela();
 
@@ -219,8 +225,7 @@ public class ConversorController {
 			float documentWidth = PageSize.A4.getWidth() - 50.00f;
 			float documentHeight = PageSize.A4.getHeight() - 50.00f;
 
-			Arquivo arquivo = listaArquivos.getPrimeiro();
-			while (arquivo != null) {
+			for (Arquivo arquivo : listaArquivos) {
 
 				if (arquivo.getTipoArquivo().equals(TipoArquivo.IMAGEM)) {
 					if (pdf.getNumberOfPages() != 0) {
@@ -241,9 +246,8 @@ public class ConversorController {
 					}
 					pdf2.close();
 				}
-
-				arquivo = listaArquivos.getProximo(arquivo);
 			}
+
 			document.close();
 
 		} catch (FileNotFoundException e) {
@@ -299,7 +303,15 @@ public class ConversorController {
 		});
 		btnEsquerda.setOnAction(evento -> {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
-			listaArquivos.trocarAnteriorById(id);
+
+			Arquivo arquivo2 = findById(id);
+			int index = listaArquivos.indexOf(arquivo2);
+
+			if (index > 0) {
+				listaArquivos.remove(index);
+				listaArquivos.add(index - 1, arquivo2);
+			}
+
 			listarArquivos();
 			scPanel.setHvalue(scPanel.getHvalue() - getValor());
 		});
@@ -315,7 +327,15 @@ public class ConversorController {
 		});
 		btnDireita.setOnAction(evento -> {
 			int id = Integer.parseInt((String) ((Node) evento.getSource()).getUserData());
-			listaArquivos.trocarProximoById(id);
+
+			Arquivo arquivo2 = findById(id);
+			int index = listaArquivos.indexOf(arquivo2);
+
+			if (index < listaArquivos.size() - 1) {
+				listaArquivos.remove(index);
+				listaArquivos.add(index + 1, arquivo2);
+			}
+
 			listarArquivos();
 			scPanel.setHvalue(scPanel.getHvalue() + getValor());
 		});
@@ -333,7 +353,9 @@ public class ConversorController {
 			for (Node node : boxImages.getChildren()) {
 				if (node.getId().equals(((Node) evento.getSource()).getUserData())) {
 					boxImages.getChildren().remove(node);
-					listaArquivos.removerById(Integer.parseInt(node.getId()));
+					int id = Integer.parseInt(node.getId());
+					Arquivo arquivo2 = findById(id);
+					listaArquivos.remove(arquivo2);
 					return;
 				}
 			}
@@ -372,7 +394,8 @@ public class ConversorController {
 		VBox card = new VBox();
 		card.setSpacing(15);
 		card.setAlignment(Pos.CENTER);
-		card.setMinWidth(950.00);
+		card.setMinWidth(pnlPrincipal.getWidth());
+		card.setPadding(new Insets(25, 0, 0, 0));
 
 		Label label = new Label("Arquivo gerado em: " + pathArquivo);
 
@@ -387,8 +410,7 @@ public class ConversorController {
 	}
 
 	private Double getValor() {
-		double result = 1.0 / listaArquivos.getContador();
-		return result;
+		return 1.0 / listaArquivos.size();
 	}
 
 	private String getBtnStyle(String tipo) {
@@ -436,6 +458,16 @@ public class ConversorController {
 				+ "    -fx-text-fill: #FFFFFF;";
 
 		return toogle ? padrao : padraoHover;
+	}
+
+	private Arquivo findById(int id) {
+		for (Arquivo arquivo : listaArquivos) {
+			if (arquivo.getId().equals(id)) {
+				return arquivo;
+			}
+
+		}
+		return null;
 	}
 
 }
